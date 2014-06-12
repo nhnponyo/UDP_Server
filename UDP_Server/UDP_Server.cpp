@@ -44,8 +44,6 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	WSADATA wsaData;
 	SOCKET servSock;
-	char message[BUF_SIZE];
-	int strLen;
 	int clntAdrSz;
 
 	SOCKADDR_IN servAdr, clntAdr;
@@ -79,14 +77,90 @@ int _tmain(int argc, _TCHAR* argv[])
 		HandleError( "binding Error\n" );
 	}
 
-	while(1)
+	int retVal;
+	clntAdrSz = sizeof( clntAdr );
+	memset( &clntAdr, 0, sizeof( clntAdr ) );
+	char buf[BUF_SIZE];
+
+	//파일 이름 받기 
+	char filename[256];
+	ZeroMemory( filename, 256 );
+
+	retVal = recvfrom( servSock, filename, 256, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );//유닉스 환경과 윈도우 환경의 sendto, recvfrom는 기능, 매개변수가 완전히 동일하다.
+	printf_s( "%s\n", filename );
+	if ( retVal == SOCKET_ERROR )
 	{
-		clntAdrSz = sizeof( clntAdr );
-		strLen = recvfrom( servSock, message, BUF_SIZE, 0, (SOCKADDR*) &clntAdr, &clntAdrSz );
-		sendto(servSock, message, strLen, 0, (SOCKADDR*)&clntAdr, sizeof(clntAdr)); //유닉스 환경과 윈도우 환경의 sendto, recvfrom는 기능, 매개변수가 완전히 동일하다.
+		HandleError( "File Name recvfrom Error" );
+		closesocket( servSock );
+		exit( 0 );
+	}
+	filename[retVal] = NULL;
+	printf_s( "받을 파일 이름: %s\n", filename );
+		
+	//파일 크기 받기 
+	int totalbytes;
+	retVal = recvfrom( servSock, (char *) &totalbytes, sizeof( totalbytes ), 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
+	if ( retVal == SOCKET_ERROR )
+	{
+		HandleError( "File Size recvfrom Error" );
+		closesocket( servSock );
+	}
+	printf_s( "받을 파일 크기: %d\n", totalbytes );
+		
+	//파일 열기 
+	FILE* fp;
+	fopen_s( &fp, filename, "wb" );
+	if ( fp == NULL )
+	{
+		perror( "File IO Error" );
+		closesocket( servSock );
 	}
 
-	closesocket( servSock ); // 소켓을 닫는다
+	//받은 사이즈 
+	int numtotal = 0;
+	do
+	{
+		ZeroMemory( buf, BUF_SIZE );
+		//파일 데이터 받기 
+		retVal = recvfrom( servSock, buf, BUF_SIZE, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
+		if ( retVal == SOCKET_ERROR )
+		{
+			HandleError( "recvfrom()" );
+			break;
+		}
+		else
+		{
+			//파일에 저장 
+			fwrite( buf, 1, retVal, fp );
+			if ( ferror( fp ) )
+			{
+				perror( "File IO Error\n" );
+				break;
+			}
+
+			numtotal += retVal;
+			printf_s( "Send %d\n", numtotal );
+			//받은 크기를 다시 보냄
+			int r = sendto( servSock, (char*) &retVal, sizeof( retVal ), 0, (SOCKADDR *) &clntAdr, clntAdrSz );
+			if ( r == SOCKET_ERROR )
+			{
+				HandleError( "send Error" );
+				continue;
+			}
+		}
+	} while ( ( retVal == BUF_SIZE ) && ( numtotal != totalbytes ) );
+	fclose( fp );
+	//전송 결과 출력 
+	if ( numtotal == totalbytes )
+	{
+		printf_s( "파일 전송 완료!\n" );
+	}
+	else
+	{
+		printf_s( "파일 전송 실패!\n" );
+	}
+
+	closesocket( servSock );
 	WSACleanup();
 	
 	return 0;
