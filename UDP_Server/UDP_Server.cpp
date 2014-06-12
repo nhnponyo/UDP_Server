@@ -1,17 +1,17 @@
-// UDP_Server.cpp : Defines the entry point for the console application.
+ï»¿// UDP_Server.cpp : Defines the entry point for the console application.
 //
 /*
-Author	: ¼ÕÃ¤¿ø (github nhnponyo)
+Author	: ì†ì±„ì› (github nhnponyo)
 Date	: 2014.06.11
 
-Windows 7, Visual Studio 13 È¯°æ¿¡¼­ ±¸ÇöµÇ¾ú½À´Ï´Ù.
+Windows 7, Visual Studio 13 í™˜ê²½ì—ì„œ êµ¬í˜„ë˜ì—ˆìŠµë‹ˆë‹¤.
 
-NHN NEXT 2014³â 1ÇĞ±â ³×Æ®¿öÅ© °úÁ¦
-UDP ¸¦ ÀÌ¿ëÇÏ¿© pdf ÆÄÀÏÀ» ¾ÈÀüÇÏ°Ô Àü¼ÛÇÏ´Â ÇÁ·Î±×·¥À» ÀÛ¼ºÇÏ½Ã¿À. 
+NHN NEXT 2014ë…„ 1í•™ê¸° ë„¤íŠ¸ì›Œí¬ ê³¼ì œ
+UDP ë¥¼ ì´ìš©í•˜ì—¬ pdf íŒŒì¼ì„ ì•ˆì „í•˜ê²Œ ì „ì†¡í•˜ëŠ” í”„ë¡œê·¸ë¨ì„ ì‘ì„±í•˜ì‹œì˜¤. 
 
-Âü°í;
+ì°¸ê³ ;
 http://cafe.naver.com/dm202/27
-http://blog.naver.com/nature128?Redirect=Log&logNo=130071446282
+http://blog.naver.com/nature128?R edirect=Log&logNo=130071446282
 */
 
 #include "stdafx.h"
@@ -24,14 +24,14 @@ http://blog.naver.com/nature128?Redirect=Log&logNo=130071446282
 #include <errno.h>	// errno
 
 /*
-//À¯´Ğ½º È¯°æ¿¡¼­ ÄÄÆÄÀÏ ½Ã ÀÎÅ¬·çµå
+//ìœ ë‹‰ìŠ¤ í™˜ê²½ì—ì„œ ì»´íŒŒì¼ ì‹œ ì¸í´ë£¨ë“œ
 #include <sys/socket.h>	// socket, bind
 #include <sys/file.h>	// O_NONBLOCK, FASYNC
 #include <arpa/inet.h>	// sockaddr_in, inet_ntoa
 #include <unistd.h>	// close
 */
 
-//À©µµ¿ì È¯°æ¿¡¼­ ÄÄÆÄÀÏ ½Ã ÀÎÅ¬·çµå
+//ìœˆë„ìš° í™˜ê²½ì—ì„œ ì»´íŒŒì¼ ì‹œ ì¸í´ë£¨ë“œ
 #include <WinSock2.h> // windows socket API
 
 #define BUF_SIZE 64
@@ -56,24 +56,24 @@ int _tmain(int argc, _TCHAR* argv[])
 		exit( 1 );
 	}
 
-	if ( WSAStartup( MAKEWORD(2,2), &wsaData ) != 0 ) // À©µµ¿ì ¼ÒÄÏ ¶óÀÌºê·¯¸® ÃÊ±âÈ­  
+	if ( WSAStartup( MAKEWORD(2,2), &wsaData ) != 0 ) // ìœˆë„ìš° ì†Œì¼“ ë¼ì´ë¸ŒëŸ¬ë¦¬ ì´ˆê¸°í™”  
 	{
 		HandleError( "WSAStartup Error" );
 	}
 
-	servSock = socket( PF_INET, SOCK_DGRAM, 0 ); // UDP ¼ÒÄÏ ÇÒ´çÀ» À§ÇØ SOCK_DGRAM ÀÎÀÚ Àü´Ş
+	servSock = socket( PF_INET, SOCK_DGRAM, 0 ); // UDP ì†Œì¼“ í• ë‹¹ì„ ìœ„í•´ SOCK_DGRAM ì¸ì ì „ë‹¬
 	if ( servSock == INVALID_SOCKET )
 	{
 		HandleError( "UDP Socket Creation Error" );
 	}
 	
-	//±¸Á¶Ã¼ º¯¼ö servAdr¿¡ ¼­¹ö ¼ÒÄÏÀÇ IP¿Í PORT Á¤º¸¸¦ ÃÊ±âÈ­
+	//êµ¬ì¡°ì²´ ë³€ìˆ˜ servAdrì— ì„œë²„ ì†Œì¼“ì˜ IPì™€ PORT ì •ë³´ë¥¼ ì´ˆê¸°í™”
 	memset( &servAdr, 0, sizeof(servAdr) );
 	servAdr.sin_family	= AF_INET;
 	servAdr.sin_addr.s_addr = htonl( INADDR_ANY );
 	servAdr.sin_port = htons( atoi( (const char*)(argv[1]) ) );
 	
-	//bind ÇÔ¼ö È£Ãâ
+	//bind í•¨ìˆ˜ í˜¸ì¶œ
 	if ( bind( servSock, (SOCKADDR*) &servAdr, sizeof( servAdr ) ) == SOCKET_ERROR )
 	{
 		HandleError( "binding Error\n" );
@@ -83,10 +83,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		clntAdrSz = sizeof( clntAdr );
 		strLen = recvfrom( servSock, message, BUF_SIZE, 0, (SOCKADDR*) &clntAdr, &clntAdrSz );
-		sendto(servSock, message, strLen, 0, (SOCKADDR*)&clntAdr, sizeof(clntAdr)); //À¯´Ğ½º È¯°æ°ú À©µµ¿ì È¯°æÀÇ sendto, recvfrom´Â ±â´É, ¸Å°³º¯¼ö°¡ ¿ÏÀüÈ÷ µ¿ÀÏÇÏ´Ù.
+		sendto(servSock, message, strLen, 0, (SOCKADDR*)&clntAdr, sizeof(clntAdr)); //ìœ ë‹‰ìŠ¤ í™˜ê²½ê³¼ ìœˆë„ìš° í™˜ê²½ì˜ sendto, recvfromëŠ” ê¸°ëŠ¥, ë§¤ê°œë³€ìˆ˜ê°€ ì™„ì „íˆ ë™ì¼í•˜ë‹¤.
 	}
 
-	closesocket( servSock ); // ¼ÒÄÏÀ» ´İ´Â´Ù
+	closesocket( servSock ); // ì†Œì¼“ì„ ë‹«ëŠ”ë‹¤
 	WSACleanup();
 	
 	return 0;
