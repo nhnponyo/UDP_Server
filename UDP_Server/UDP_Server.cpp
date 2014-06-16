@@ -11,7 +11,7 @@ UDP 를 이용하여 pdf 파일을 안전하게 전송하는 프로그램을 작
 
 참고;
 http://cafe.naver.com/dm202/27
-http://blog.naver.com/nature128?R edirect=Log&logNo=130071446282
+http://blog.naver.com/nature128?Redirect=Log&logNo=130071446282
 */
 
 #include "stdafx.h"
@@ -19,9 +19,9 @@ http://blog.naver.com/nature128?R edirect=Log&logNo=130071446282
 #include <stdlib.h>	// atoi
 #include <string.h>	// memset
 
-#include <fcntl.h>	// fcntl
-#include <signal.h>	// signal, SIGALRM
-#include <errno.h>	// errno
+//#include <fcntl.h>	// fcntl
+//#include <signal.h>	// signal, SIGALRM
+//#include <errno.h>	// errno
 
 /*
 //유닉스 환경에서 컴파일 시 인클루드
@@ -48,7 +48,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	SOCKADDR_IN servAdr, clntAdr;
 
-	if ( argc != 2 )
+	if ( argc != 1 )
 	{
 		printf_s( "Usage : %s <port>\n", argv[0] );
 		exit( 1 );
@@ -69,8 +69,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	memset( &servAdr, 0, sizeof(servAdr) );
 	servAdr.sin_family	= AF_INET;
 	servAdr.sin_addr.s_addr = htonl( INADDR_ANY );
-	servAdr.sin_port = htons( atoi( (const char*)(argv[1]) ) );
-	
+	//servAdr.sin_port = htons( atoi( (const char*)(argv[1]) ) );
+	servAdr.sin_port = htons( 0 ); // 랜덤번호로 포트 생성
+
 	//bind 함수 호출
 	if ( bind( servSock, (SOCKADDR*) &servAdr, sizeof( servAdr ) ) == SOCKET_ERROR )
 	{
@@ -170,6 +171,7 @@ void HandleError( char *message )
 {
 	fputs( message, stderr );
 	fputc( '\n', stderr );
+	getchar();
 	exit( 1 );
 }
 
