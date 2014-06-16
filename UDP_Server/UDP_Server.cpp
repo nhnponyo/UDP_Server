@@ -40,6 +40,12 @@ http://blog.naver.com/nature128?Redirect=Log&logNo=130071446282
 
 void HandleError( char *message );
 
+template <typename ... Types >
+inline void Log( const Types& ...args )
+{
+	printf_s(args ...);
+};
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	WSADATA wsaData;
@@ -54,18 +60,23 @@ int _tmain(int argc, _TCHAR* argv[])
 		exit( 1 );
 	}
 
+	Log( "윈도우 소켓 라이브러리 초기화...\n" );
 	if ( WSAStartup( MAKEWORD(2,2), &wsaData ) != 0 ) // 윈도우 소켓 라이브러리 초기화  
 	{
 		HandleError( "WSAStartup Error" );
 	}
-
+	
+	Log( "소켓 생성...\n" );
 	servSock = socket( PF_INET, SOCK_DGRAM, 0 ); // UDP 소켓 할당을 위해 SOCK_DGRAM 인자 전달
 	if ( servSock == INVALID_SOCKET )
 	{
 		HandleError( "UDP Socket Creation Error" );
 	}
 	
+	
 	//구조체 변수 servAdr에 서버 소켓의 IP와 PORT 정보를 초기화
+	Log( "소켓 초기화 및 바인딩...\n" );
+
 	memset( &servAdr, 0, sizeof(servAdr) );
 	servAdr.sin_family	= AF_INET;
 	servAdr.sin_addr.s_addr = htonl( INADDR_ANY );
@@ -86,9 +97,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	//파일 이름 받기 
 	char filename[256];
 	ZeroMemory( filename, 256 );
-
+	
+	Log( "파일 이름 recvfrom ..." );
 	retVal = recvfrom( servSock, filename, 256, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );//유닉스 환경과 윈도우 환경의 sendto, recvfrom는 기능, 매개변수가 완전히 동일하다.
-	printf_s( "%s\n", filename );
+	Log( "%s 전송 시작...\n", filename );
 	if ( retVal == SOCKET_ERROR )
 	{
 		HandleError( "File Name recvfrom Error" );
@@ -96,37 +108,39 @@ int _tmain(int argc, _TCHAR* argv[])
 		exit( 0 );
 	}
 	filename[retVal] = NULL;
-	printf_s( "받을 파일 이름: %s\n", filename );
+	Log( "받을 파일 이름: %s\n", filename );
 		
 	//파일 크기 받기 
 	int totalbytes;
+	Log( "파일 크기 recvfrom ..." );
 	retVal = recvfrom( servSock, (char *) &totalbytes, sizeof( totalbytes ), 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
 	if ( retVal == SOCKET_ERROR )
 	{
 		HandleError( "File Size recvfrom Error" );
 		closesocket( servSock );
 	}
-	printf_s( "받을 파일 크기: %d\n", totalbytes );
+	Log( "받을 파일 크기: %d\n", totalbytes );
 		
 	//파일 열기 
 	FILE* fp;
 	fopen_s( &fp, filename, "wb" );
 	if ( fp == NULL )
 	{
-		perror( "File IO Error" );
+		HandleError( "File IO Error" );
 		closesocket( servSock );
 	}
 
-	//받은 사이즈 
+	//받은 총 사이즈 
 	int numtotal = 0;
 	do
 	{
 		ZeroMemory( buf, BUF_SIZE );
 		//파일 데이터 받기 
+		Log( "파일 데이터 recvfrom ..." );
 		retVal = recvfrom( servSock, buf, BUF_SIZE, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
 		if ( retVal == SOCKET_ERROR )
 		{
-			HandleError( "recvfrom()" );
+			HandleError( "File Data recvfrom Error" );
 			break;
 		}
 		else
@@ -135,13 +149,14 @@ int _tmain(int argc, _TCHAR* argv[])
 			fwrite( buf, 1, retVal, fp );
 			if ( ferror( fp ) )
 			{
-				perror( "File IO Error\n" );
+				HandleError( "File IO Error\n" );
 				break;
 			}
 
 			numtotal += retVal;
-			printf_s( "Send %d\n", numtotal );
+			Log( "Send %d\n", numtotal );
 			//받은 크기를 다시 보냄
+			Log( "받은 파일 총량 send ..." );
 			int r = sendto( servSock, (char*) &retVal, sizeof( retVal ), 0, (SOCKADDR *) &clntAdr, clntAdrSz );
 			if ( r == SOCKET_ERROR )
 			{
@@ -151,14 +166,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	} while ( ( retVal == BUF_SIZE ) && ( numtotal != totalbytes ) );
 	fclose( fp );
+
 	//전송 결과 출력 
 	if ( numtotal == totalbytes )
 	{
-		printf_s( "파일 전송 완료!\n" );
+		Log( "파일 전송 완료!\n" );
 	}
 	else
 	{
-		printf_s( "파일 전송 실패!\n" );
+		Log( "파일 전송 실패!\n" );
 	}
 
 	closesocket( servSock );
