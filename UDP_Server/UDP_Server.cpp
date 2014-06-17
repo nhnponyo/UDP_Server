@@ -34,7 +34,7 @@ http://blog.naver.com/nature128?Redirect=Log&logNo=130071446282
 //윈도우 환경에서 컴파일 시 인클루드
 #include <WinSock2.h> // windows socket API
 
-#define BUF_SIZE 64
+#define BUF_SIZE 512
 
 #pragma comment ( lib, "Ws2_32.lib" )
 
@@ -81,7 +81,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	servAdr.sin_family	= AF_INET;
 	servAdr.sin_addr.s_addr = htonl( INADDR_ANY );
 	//servAdr.sin_port = htons( atoi( (const char*)(argv[1]) ) );
-	servAdr.sin_port = htons( 0 ); // 랜덤번호로 포트 생성
+	//servAdr.sin_port = htons( 0 ); // 랜덤번호로 포트 생성
+	servAdr.sin_port = htons( 9019 );
 
 	//bind 함수 호출
 	if ( bind( servSock, (SOCKADDR*) &servAdr, sizeof( servAdr ) ) == SOCKET_ERROR )
@@ -98,7 +99,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	char filename[256];
 	ZeroMemory( filename, 256 );
 	
-	Log( "파일 이름 recvfrom ..." );
+	Log( "파일 이름 recvfrom ...\n" );
 	retVal = recvfrom( servSock, filename, 256, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );//유닉스 환경과 윈도우 환경의 sendto, recvfrom는 기능, 매개변수가 완전히 동일하다.
 	Log( "%s 전송 시작...\n", filename );
 	if ( retVal == SOCKET_ERROR )
@@ -112,7 +113,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		
 	//파일 크기 받기 
 	int totalbytes;
-	Log( "파일 크기 recvfrom ..." );
+	Log( "파일 크기 recvfrom ...\n" );
 	retVal = recvfrom( servSock, (char *) &totalbytes, sizeof( totalbytes ), 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
 	if ( retVal == SOCKET_ERROR )
 	{
@@ -136,7 +137,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		ZeroMemory( buf, BUF_SIZE );
 		//파일 데이터 받기 
-		Log( "파일 데이터 recvfrom ..." );
+		Log( "파일 데이터 recvfrom ...\n" );
 		retVal = recvfrom( servSock, buf, BUF_SIZE, 0, (SOCKADDR *) &clntAdr, &clntAdrSz );
 		if ( retVal == SOCKET_ERROR )
 		{
@@ -156,7 +157,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			numtotal += retVal;
 			Log( "Send %d\n", numtotal );
 			//받은 크기를 다시 보냄
-			Log( "받은 파일 총량 send ..." );
+			Log( "받은 파일 총량 send ...\n" );
 			int r = sendto( servSock, (char*) &retVal, sizeof( retVal ), 0, (SOCKADDR *) &clntAdr, clntAdrSz );
 			if ( r == SOCKET_ERROR )
 			{

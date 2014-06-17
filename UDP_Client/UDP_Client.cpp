@@ -26,7 +26,7 @@ UDP 를 이용하여 pdf 파일을 안전하게 전송하는 프로그램을 작
 //윈도우 환경에서 컴파일 시 인클루드
 #include <WinSock2.h> // windows socket API
 
-#define BUF_SIZE 64
+#define BUF_SIZE 512
 
 #pragma comment ( lib, "Ws2_32.lib" )
 
